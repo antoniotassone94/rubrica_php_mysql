@@ -1,4 +1,4 @@
-let percorso = "http://localhost/rubrica/build0.0.1/";
+let percorso = "http://localhost/rubrica/build0.0.2/";
 
 function stampa(id,messaggio){
 	document.getElementById(id).innerHTML = messaggio;
@@ -162,47 +162,37 @@ function aggiungi_contatto(){
 	fetch(percorso+"genera_token.php")
 	.then(risposta => risposta.json())
 	.then(dati => {
-		let finestra = window.open("","window","width=800,height=600");
-		let codice = document.createElement("script");
-		codice.setAttribute("src",percorso+"codice.js");
-		finestra.document.head.appendChild(codice);
-		let stile1 = document.createElement("link");
-		stile1.setAttribute("rel","stylesheet");
-		stile1.setAttribute("href","https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css");
-		stile1.setAttribute("type","text/css");
-		finestra.document.head.appendChild(stile1);
-		let stile2 = document.createElement("link");
-		stile2.setAttribute("rel","stylesheet");
-		let tema = vedi_tema_impostato();
-		switch(tema){
-			case "tema1":
-				stile2.setAttribute("href",percorso+"stile1.css");
-				break;
-			case "tema2":
-				stile2.setAttribute("href",percorso+"stile2.css");
-				break;
-			default:
-				stile2.setAttribute("href",percorso+"stile1.css");
-				break;
+		let body = document.querySelector("body");
+		let container_vecchio = document.getElementsByName("form_inserimento_contatto");
+		if(container_vecchio.length > 0){
+			container_vecchio.forEach(elemento => body.removeChild(elemento));
 		}
-		stile2.setAttribute("type","text/css");
-		finestra.document.head.appendChild(stile2);
-		let body = finestra.document.querySelector("body");
-		let form_vecchio = finestra.document.getElementsByName("modulo");
-		if(form_vecchio.length > 0){
-			form_vecchio.forEach(form => body.removeChild(form));
-		}
-		let sezione = document.createElement("section");
-		sezione.setAttribute("class","section");
 		let container = document.createElement("div");
-		container.setAttribute("id","container");
+		container.setAttribute("class","modal");
+		container.setAttribute("id","form_inserimento_contatto");
+		container.setAttribute("name","form_inserimento_contatto");
+		container.style.display = "block";
+		let sfondo = document.createElement("div");
+		sfondo.setAttribute("class","modal-background");
+		let contenuto = document.createElement("div");
+		contenuto.setAttribute("class","modal-content");
 		let form = document.createElement("form");
 		form.setAttribute("name","modulo");
 		form.setAttribute("method","POST");
 		form.setAttribute("class","box");
-		sezione.appendChild(container);
-		container.appendChild(form);
-		finestra.document.body.appendChild(sezione);
+		let bottone_uscita = document.createElement("button");
+		bottone_uscita.setAttribute("id","chiusura_inserimento_contatto");
+		bottone_uscita.setAttribute("class","modal-close is-large");
+		bottone_uscita.setAttribute("aria-label","close");
+		bottone_uscita.onclick = function() {
+			container.style.display = "none";
+			body.removeChild(container);
+		}
+		contenuto.appendChild(form);
+		container.appendChild(sfondo);
+		container.appendChild(contenuto);
+		container.appendChild(bottone_uscita);
+		body.appendChild(container);
 		let token = document.createElement("input");
 		token.setAttribute("type","hidden");
 		token.setAttribute("name","token");
@@ -215,7 +205,7 @@ function aggiungi_contatto(){
 		campo_nome.setAttribute("type","text");
 		campo_nome.setAttribute("name","nome");
 		campo_nome.setAttribute("id","nome");
-		campo_nome.setAttribute("class","input is-primary is-rounded required");
+		campo_nome.setAttribute("class","input is-primary is-rounded");
 		let spazio1 = document.createElement("br");
 		let spazio2 = document.createElement("br");
 		let etichetta_cognome = document.createElement("label");
@@ -248,7 +238,7 @@ function aggiungi_contatto(){
 		bottone.setAttribute("class","button is-rounded is-fullwidth is-success");
 		let spazio7 = document.createElement("br");
 		let messaggio = document.createElement("span");
-		messaggio.setAttribute("id","messaggio");
+		messaggio.setAttribute("id","messaggio_interno");
 		form.appendChild(token);
 		form.appendChild(etichetta_nome);
 		form.appendChild(campo_nome);
@@ -288,7 +278,7 @@ function valida1(){
 		controllo = 1;
 		messaggio += "Inserire l'indirizzo del nuovo contatto.<br>";
 	}
-	stampa("messaggio",messaggio);
+	stampa("messaggio_interno",messaggio);
 	if(controllo == 0){
 		let dati_inviati = new FormData();
 		dati_inviati.append("token",token);
@@ -303,11 +293,18 @@ function valida1(){
 		.then(risposta => risposta.json())
 		.then(dati => {
 			if(dati.controllo == 0){
-				window.opener.document.getElementById("messaggio").innerHTML = dati.messaggio;
-				window.opener.stampa_rubrica();
-				window.close();
-			}else{
+				const body = document.querySelector("body");
+				const container_vecchio = document.getElementsByName("form_inserimento_contatto");
+				if(container_vecchio.length > 0){
+					container_vecchio.forEach(container => {
+						container.style.display = "none";
+						body.removeChild(container);
+					});
+				}
 				stampa("messaggio",dati.messaggio);
+				stampa_rubrica();
+			}else{
+				stampa("messaggio_interno",dati.messaggio);
 			}
 		})
 		.catch(errore => console.error(errore));
@@ -363,47 +360,37 @@ function modifica_contatto(id_contatto){
 	fetch(percorso+"genera_token.php")
 	.then(risposta => risposta.json())
 	.then(dati => {
-		let finestra = window.open("","window","width=800,height=600");
-		let codice = document.createElement("script");
-		codice.setAttribute("src",percorso+"codice.js");
-		finestra.document.head.appendChild(codice);
-		let stile1 = document.createElement("link");
-		stile1.setAttribute("rel","stylesheet");
-		stile1.setAttribute("href","https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css");
-		stile1.setAttribute("type","text/css");
-		finestra.document.head.appendChild(stile1);
-		let stile2 = document.createElement("link");
-		stile2.setAttribute("rel","stylesheet");
-		let tema = vedi_tema_impostato();
-		switch(tema){
-			case "tema1":
-				stile2.setAttribute("href",percorso+"stile1.css");
-				break;
-			case "tema2":
-				stile2.setAttribute("href",percorso+"stile2.css");
-				break;
-			default:
-				stile2.setAttribute("href",percorso+"stile1.css");
-				break;
+		let body = document.querySelector("body");
+		let container_vecchio = document.getElementsByName("form_modifica_contatto");
+		if(container_vecchio.length > 0){
+			container_vecchio.forEach(elemento => body.removeChild(elemento));
 		}
-		stile2.setAttribute("type","text/css");
-		finestra.document.head.appendChild(stile2);
-		let body = finestra.document.querySelector("body");
-		let form_vecchio = finestra.document.getElementsByName("modulo");
-		if(form_vecchio.length > 0){
-			form_vecchio.forEach(form => body.removeChild(form));
-		}
-		let sezione = document.createElement("section");
-		sezione.setAttribute("class","section");
 		let container = document.createElement("div");
-		container.setAttribute("id","container");
+		container.setAttribute("class","modal");
+		container.setAttribute("id","form_modifica_contatto");
+		container.setAttribute("name","form_modifica_contatto");
+		container.style.display = "block";
+		let sfondo = document.createElement("div");
+		sfondo.setAttribute("class","modal-background");
+		let contenuto = document.createElement("div");
+		contenuto.setAttribute("class","modal-content");
 		let form = document.createElement("form");
 		form.setAttribute("name","modulo");
 		form.setAttribute("method","POST");
 		form.setAttribute("class","box");
-		sezione.appendChild(container);
-		container.appendChild(form);
-		finestra.document.body.appendChild(sezione);
+		let bottone_uscita = document.createElement("button");
+		bottone_uscita.setAttribute("id","chiusura_modifica_contatto");
+		bottone_uscita.setAttribute("class","modal-close is-large");
+		bottone_uscita.setAttribute("aria-label","close");
+		bottone_uscita.onclick = function() {
+			container.style.display = "none";
+			body.removeChild(container);
+		}
+		contenuto.appendChild(form);
+		container.appendChild(sfondo);
+		container.appendChild(contenuto);
+		container.appendChild(bottone_uscita);
+		body.appendChild(container);
 		let token = document.createElement("input");
 		token.setAttribute("type","hidden");
 		token.setAttribute("name","token");
@@ -446,7 +433,7 @@ function modifica_contatto(id_contatto){
 		bottone.setAttribute("class","button is-rounded is-fullwidth is-success");
 		let spazio3 = document.createElement("br");
 		let messaggio = document.createElement("span");
-		messaggio.setAttribute("id","messaggio");
+		messaggio.setAttribute("id","messaggio_interno");
 		form.appendChild(token);
 		form.appendChild(etichetta_dato);
 		form.appendChild(contenitore_dato);
@@ -540,15 +527,15 @@ function inserisci_valore(){
 function valida2(id_contatto){
 	let dato = modulo.dato.value;
 	if(dato == ""){
-		stampa("messaggio","Selezionare il dato da modificare.");
+		stampa("messaggio_interno","Selezionare il dato da modificare.");
 	}else{
-		stampa("messaggio","");
+		stampa("messaggio_interno","");
 		let valore = modulo.valore.value;
 		let token = modulo.token.value;
 		let controllo = 0;
 		if(valore == ""){
 			controllo = 1;
-			stampa("messaggio","Scrivere il nuovo valore del dato selezionato.");
+			stampa("messaggio_interno","Scrivere il nuovo valore del dato selezionato.");
 		}
 		if(controllo == 0){
 			let dati_inviati = new FormData();
@@ -564,11 +551,18 @@ function valida2(id_contatto){
 			.then(risposta => risposta.json())
 			.then(dati => {
 				if(dati.controllo == 0){
-					window.opener.document.getElementById("messaggio").innerHTML = dati.messaggio;
-					window.opener.stampa_rubrica();
-					window.close();
-				}else{
+					let body = document.querySelector("body");
+					let container_vecchio = document.getElementsByName("form_modifica_contatto");
+					if(container_vecchio.length > 0){
+						container_vecchio.forEach(container => {
+							container.style.display = "none";
+							body.removeChild(container)
+						});
+					}
 					stampa("messaggio",dati.messaggio);
+					stampa_rubrica();
+				}else{
+					stampa("messaggio_interno",dati.messaggio);
 				}
 			})
 			.catch(errore => console.error(errore));
@@ -580,47 +574,37 @@ function primo_inserimento(id_contatto){
 	fetch(percorso+"genera_token.php")
 	.then(risposta => risposta.json())
 	.then(dati => {
-		let finestra = window.open("","window","width=800,height=600");
-		let codice = document.createElement("script");
-		codice.setAttribute("src",percorso+"codice.js");
-		finestra.document.head.appendChild(codice);
-		let stile1 = document.createElement("link");
-		stile1.setAttribute("rel","stylesheet");
-		stile1.setAttribute("href","https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css");
-		stile1.setAttribute("type","text/css");
-		finestra.document.head.appendChild(stile1);
-		let stile2 = document.createElement("link");
-		stile2.setAttribute("rel","stylesheet");
-		let tema = vedi_tema_impostato();
-		switch(tema){
-			case "tema1":
-				stile2.setAttribute("href",percorso+"stile1.css");
-				break;
-			case "tema2":
-				stile2.setAttribute("href",percorso+"stile2.css");
-				break;
-			default:
-				stile2.setAttribute("href",percorso+"stile1.css");
-				break;
+		let body = document.querySelector("body");
+		let container_vecchio = document.getElementsByName("form_primo_inserimento");
+		if(container_vecchio.length > 0){
+			container_vecchio.forEach(elemento => body.removeChild(elemento));
 		}
-		stile2.setAttribute("type","text/css");
-		finestra.document.head.appendChild(stile2);
-		let body = finestra.document.querySelector("body");
-		let form_vecchio = finestra.document.getElementsByName("modulo");
-		if(form_vecchio.length > 0){
-			form_vecchio.forEach(form => body.removeChild(form));
-		}
-		let sezione = document.createElement("section");
-		sezione.setAttribute("class","section");
 		let container = document.createElement("div");
-		container.setAttribute("id","container");
+		container.setAttribute("class","modal");
+		container.setAttribute("id","form_primo_inserimento");
+		container.setAttribute("name","form_primo_inserimento");
+		container.style.display = "block";
+		let sfondo = document.createElement("div");
+		sfondo.setAttribute("class","modal-background");
+		let contenuto = document.createElement("div");
+		contenuto.setAttribute("class","modal-content");
 		let form = document.createElement("form");
 		form.setAttribute("name","modulo");
 		form.setAttribute("method","POST");
 		form.setAttribute("class","box");
-		sezione.appendChild(container);
-		container.appendChild(form);
-		finestra.document.body.appendChild(sezione);
+		let bottone_uscita = document.createElement("button");
+		bottone_uscita.setAttribute("id","chiusura_primo_inserimento");
+		bottone_uscita.setAttribute("class","modal-close is-large");
+		bottone_uscita.setAttribute("aria-label","close");
+		bottone_uscita.onclick = function() {
+			container.style.display = "none";
+			body.removeChild(container);
+		}
+		contenuto.appendChild(form);
+		container.appendChild(sfondo);
+		container.appendChild(contenuto);
+		container.appendChild(bottone_uscita);
+		body.appendChild(container);
 		let token = document.createElement("input");
 		token.setAttribute("type","hidden");
 		token.setAttribute("name","token");
@@ -655,7 +639,7 @@ function primo_inserimento(id_contatto){
 		bottone.setAttribute("class","button is-rounded is-fullwidth is-success");
 		let spazio5 = document.createElement("br");
 		let messaggio = document.createElement("span");
-		messaggio.setAttribute("id","messaggio");
+		messaggio.setAttribute("id","messaggio_interno");
 		form.appendChild(token);
 		form.appendChild(etichetta_telefono);
 		form.appendChild(campo_telefono);
@@ -679,7 +663,7 @@ function valida3(id_contatto){
 	let controllo = 0;
 	if(telefono == "" && email == ""){
 		controllo = 1;
-		stampa("messaggio","Compilare almeno uno dei due campi a disposizione.");
+		stampa("messaggio_interno","Compilare almeno uno dei due campi a disposizione.");
 	}
 	if(controllo == 0){
 		let dati_inviati = new FormData();
@@ -695,11 +679,18 @@ function valida3(id_contatto){
 		.then(risposta => risposta.json())
 		.then(dati => {
 			if(dati.controllo == 0){
-				window.opener.document.getElementById("messaggio").innerHTML = dati.messaggio;
-				window.opener.stampa_rubrica();
-				window.close();
-			}else{
+				let body = document.querySelector("body");
+				let container_vecchio = document.getElementsByName("form_primo_inserimento");
+				if(container_vecchio.length > 0){
+					container_vecchio.forEach(container => {
+						container.style.display = "none";
+						body.removeChild(container)
+					});
+				}
 				stampa("messaggio",dati.messaggio);
+				stampa_rubrica();
+			}else{
+				stampa("messaggio_interno",dati.messaggio);
 			}
 		})
 		.catch(errore => console.error(errore));
