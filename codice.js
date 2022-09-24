@@ -1,4 +1,7 @@
-let percorso = "http://localhost/rubrica/build0.0.2/";
+let percorso = "http://localhost/rubrica/build1.0.0/";
+let comuni;
+let province;
+let regioni;
 
 function stampa(id,messaggio){
 	document.getElementById(id).innerHTML = messaggio;
@@ -33,8 +36,26 @@ function cambia_tema(){
 	}
 }
 
+async function caricamento_applicazione(){
+	try{
+		const body = document.querySelector("body");
+		const finestra_caricamento = document.getElementById("finestra_caricamento");
+		finestra_caricamento.style.display = "block";
+		let caricamento = await fetch(percorso+"estrazione_dati_comuni.php");
+		let risposta = await caricamento.json();
+		comuni = risposta.elenco_comuni;
+		province = risposta.elenco_province;
+		regioni = risposta.elenco_regioni;
+		finestra_caricamento.style.display = "none";
+		body.removeChild(finestra_caricamento);
+		stampa_rubrica();
+	}catch(errore){
+		console.error(errore);
+	}
+}
+
 function stampa_rubrica(){
-	fetch(percorso+"estrazione_dati.php")
+	fetch(percorso+"estrazione_dati_rubrica.php")
 	.then(risposta => risposta.json())
 	.then(dati => {
 		if(dati.elenco_contatti.length > 0){
@@ -49,7 +70,7 @@ function stampa_rubrica(){
 			tabella.setAttribute("id","rubrica");
 			tabella.setAttribute("name","rubrica");
 			let intestazione = document.createElement("thead");
-			let dati_intestazione = ["id_contatto","Nome","Cognome","Indirizzo","Numeri di telefono","Indirizzi e-mail",""];
+			let dati_intestazione = ["id_contatto","Nome","Cognome","Indirizzo","Comune","Numeri di telefono","Indirizzi e-mail",""];
 			let riga_intestazione = document.createElement("tr");
 			dati_intestazione.forEach(dato => {
 				let cella_intestazione = document.createElement("th");
@@ -70,6 +91,30 @@ function stampa_rubrica(){
 				cella3.innerHTML = dato.cognome;
 				let cella4 = document.createElement("td");
 				cella4.innerHTML = dato.indirizzo;
+				let cella5 = document.createElement("td");
+				let comune_residenza = "";
+				let j = 0;
+				while(j < comuni.length && comuni[j]["id_comune"] != dato.id_comune){
+					j++;
+				}
+				if(j < comuni.length){
+					comune_residenza += comuni[j]["nome"] + "<br>";
+					let k = 0;
+					while(k < province.length && province[k]["id_provincia"] != comuni[j]["id_provincia"]){
+						k++;
+					}
+					if(k < province.length){
+						comune_residenza += province[k]["nome"] + " (" + province[k]["sigla"] + ")<br>";
+						let l = 0;
+						while(l < regioni.length && regioni[l]["id_regione"] != province[k]["id_regione"]){
+							l++;
+						}
+						if(l < regioni.length){
+							comune_residenza += regioni[l]["nome"];
+						}
+					}
+				}
+				cella5.innerHTML = comune_residenza;
 				let cella_numeri_telefono = document.createElement("td");
 				let cella_indirizzi_email = document.createElement("td");
 				let cella_primo_inserimento = document.createElement("td");
@@ -119,7 +164,7 @@ function stampa_rubrica(){
 					link_primo_inserimento.innerHTML = "Effettua il primo inserimento";
 					cella_primo_inserimento.appendChild(link_primo_inserimento);
 				}
-				let cella5 = document.createElement("td");
+				let cella6 = document.createElement("td");
 				let link_modifica_contatto = document.createElement("a");
 				link_modifica_contatto.setAttribute("href","javascript:modifica_contatto('"+dato.id_contatto+"')");
 				link_modifica_contatto.innerHTML = "Modifica contatto";
@@ -127,20 +172,21 @@ function stampa_rubrica(){
 				let link_elimina_contatto = document.createElement("a");
 				link_elimina_contatto.setAttribute("href","javascript:elimina_contatto('"+dato.id_contatto+"')");
 				link_elimina_contatto.innerHTML = "Elimina contatto";
-				cella5.appendChild(link_modifica_contatto);
-				cella5.appendChild(spazio);
-				cella5.appendChild(link_elimina_contatto);
+				cella6.appendChild(link_modifica_contatto);
+				cella6.appendChild(spazio);
+				cella6.appendChild(link_elimina_contatto);
 				riga.appendChild(cella1);
 				riga.appendChild(cella2);
 				riga.appendChild(cella3);
 				riga.appendChild(cella4);
+				riga.appendChild(cella5);
 				if(dati.numeri_telefono[i].length > 0 || dati.indirizzi_email[i].length > 0){
 					riga.appendChild(cella_numeri_telefono);
 					riga.appendChild(cella_indirizzi_email);
 				}else{
 					riga.appendChild(cella_primo_inserimento);
 				}
-				riga.appendChild(cella5);
+				riga.appendChild(cella6);
 				corpo.appendChild(riga);
 				i++;
 			});
@@ -230,6 +276,53 @@ function aggiungi_contatto(){
 		campo_indirizzo.setAttribute("class","input is-primary is-rounded");
 		let spazio5 = document.createElement("br");
 		let spazio6 = document.createElement("br");
+		let etichetta_id_comune = document.createElement("label");
+		etichetta_id_comune.setAttribute("for","id_comune");
+		etichetta_id_comune.innerHTML = "Selezionare il comune di residenza:";
+		etichetta_id_comune.setAttribute("class","label");
+		let colonne = document.createElement("div");
+		colonne.setAttribute("class","columns");
+		let colonna1 = document.createElement("div");
+		colonna1.setAttribute("class","column");
+		let contenitore_regioni = document.createElement("div");
+		contenitore_regioni.setAttribute("class","select is-primary is-rounded is-fullwidth");
+		let campo_regioni = document.createElement("select");
+		campo_regioni.setAttribute("name","id_regione");
+		campo_regioni.setAttribute("id","id_regione");
+		campo_regioni.setAttribute("onchange","javascript:seleziona_regione('id_comune')");
+		let opzione_vuota1 = document.createElement("option");
+		opzione_vuota1.setAttribute("value","");
+		campo_regioni.appendChild(opzione_vuota1);
+		regioni.forEach(regione => {
+			let opzione = document.createElement("option");
+			opzione.setAttribute("value",regione.id_regione);
+			opzione.innerHTML = regione.nome;
+			campo_regioni.appendChild(opzione);
+		});
+		contenitore_regioni.appendChild(campo_regioni);
+		colonna1.appendChild(contenitore_regioni);
+		colonne.appendChild(colonna1);
+		let colonna2 = document.createElement("div");
+		colonna2.setAttribute("class","column");
+		let contenitore_province = document.createElement("div");
+		contenitore_province.setAttribute("class","select is-primary is-rounded is-fullwidth");
+		let campo_province = document.createElement("select");
+		campo_province.setAttribute("name","id_provincia");
+		campo_province.setAttribute("id","id_provincia");
+		campo_province.setAttribute("onchange","javascript:seleziona_provincia('id_comune')");
+		contenitore_province.appendChild(campo_province);
+		colonna2.appendChild(contenitore_province);
+		colonne.appendChild(colonna2);
+		let colonna3 = document.createElement("div");
+		colonna3.setAttribute("class","column");
+		let contenitore_comuni = document.createElement("div");
+		contenitore_comuni.setAttribute("class","select is-primary is-rounded is-fullwidth");
+		let campo_comuni = document.createElement("select");
+		campo_comuni.setAttribute("name","id_comune");
+		campo_comuni.setAttribute("id","id_comune");
+		contenitore_comuni.appendChild(campo_comuni);
+		colonna3.appendChild(contenitore_comuni);
+		colonne.appendChild(colonna3);
 		let bottone = document.createElement("input");
 		bottone.setAttribute("type","button");
 		bottone.setAttribute("name","invia");
@@ -252,6 +345,8 @@ function aggiungi_contatto(){
 		form.appendChild(campo_indirizzo);
 		form.appendChild(spazio5);
 		form.appendChild(spazio6);
+		form.appendChild(etichetta_id_comune);
+		form.appendChild(colonne);
 		form.appendChild(bottone);
 		form.appendChild(spazio7);
 		form.appendChild(messaggio);
@@ -259,11 +354,73 @@ function aggiungi_contatto(){
 	.catch(errore => console.error(errore));
 }
 
+function seleziona_regione(nome_campo_comuni){
+	let opzioni_province_vecchie = document.getElementsByClassName("elenco_province");
+	let opzioni_comuni_vecchi = document.getElementsByClassName("elenco_comuni");
+	let campo_province = document.getElementById("id_provincia");
+	let campo_comuni = document.getElementById(nome_campo_comuni);
+	if(opzioni_province_vecchie.length > 0){
+		for(let i = 0;i < opzioni_province_vecchie.length;i++){
+			campo_province.removeChild(opzioni_province_vecchie[i]);
+		}
+	}
+	if(opzioni_comuni_vecchi.length > 0){
+		for(let i = 0;i < opzioni_comuni_vecchi.length;i++){
+			campo_comuni.removeChild(opzioni_comuni_vecchi[i]);
+		}
+	}
+	let id_regione = parseInt(modulo.id_regione.value);
+	if(id_regione > 0){
+		modulo.id_regione.disabled = true;
+		let opzione_vuota = document.createElement("option");
+		opzione_vuota.setAttribute("value","");
+		opzione_vuota.setAttribute("class","elenco_province");
+		campo_province.appendChild(opzione_vuota);
+		for(let i = 0;i < province.length;i++){
+			if(parseInt(province[i].id_regione) == id_regione){
+				let opzione = document.createElement("option");
+				opzione.setAttribute("value",province[i].id_provincia);
+				opzione.setAttribute("class","elenco_province");
+				opzione.innerHTML = province[i].nome;
+				campo_province.appendChild(opzione);
+			}
+		}
+	}
+}
+
+function seleziona_provincia(nome_campo_comuni){
+	let opzioni_comuni_vecchi = document.getElementsByClassName("elenco_comuni");
+	let campo_comuni = document.getElementById(nome_campo_comuni);
+	if(opzioni_comuni_vecchi.length > 0){
+		for(let i = 0;i < opzioni_comuni_vecchi.length;i++){
+			campo_comuni.removeChild(opzioni_comuni_vecchi[i]);
+		}
+	}
+	let id_provincia = parseInt(modulo.id_provincia.value);
+	if(id_provincia > 0){
+		modulo.id_provincia.disabled = true;
+		let opzione_vuota = document.createElement("option");
+		opzione_vuota.setAttribute("value","");
+		opzione_vuota.setAttribute("class","elenco_comuni");
+		campo_comuni.appendChild(opzione_vuota);
+		for(let i = 0;i < comuni.length;i++){
+			if(parseInt(comuni[i].id_provincia) == id_provincia){
+				let opzione = document.createElement("option");
+				opzione.setAttribute("value",comuni[i].id_comune);
+				opzione.setAttribute("class","elenco_comuni");
+				opzione.innerHTML = comuni[i].nome;
+				campo_comuni.appendChild(opzione);
+			}
+		}
+	}
+}
+
 function valida1(){
-	let token = modulo.token.value;
 	let nome = modulo.nome.value;
 	let cognome = modulo.cognome.value;
 	let indirizzo = modulo.indirizzo.value;
+	let id_comune = modulo.id_comune.value;
+	let token = modulo.token.value;
 	let controllo = 0;
 	let messaggio = "";
 	if(nome == ""){
@@ -278,13 +435,18 @@ function valida1(){
 		controllo = 1;
 		messaggio += "Inserire l'indirizzo del nuovo contatto.<br>";
 	}
+	if(id_comune == ""){
+		controllo = 1;
+		messaggio += "Selezionare il comune di residenza del nuovo contatto.<br>";
+	}
 	stampa("messaggio_interno",messaggio);
 	if(controllo == 0){
 		let dati_inviati = new FormData();
-		dati_inviati.append("token",token);
 		dati_inviati.append("nome",nome);
 		dati_inviati.append("cognome",cognome);
 		dati_inviati.append("indirizzo",indirizzo);
+		dati_inviati.append("id_comune",id_comune);
+		dati_inviati.append("token",token);
 		fetch(percorso+"aggiungi_contatto.php",{
 			'method':'POST',
 			'header':{'Content-type':'application/json'},
@@ -316,31 +478,29 @@ function elimina_contatto(id_contatto){
 	.then(risposta => risposta.json())
 	.then(dati => {
 		let body = document.querySelector("body");
-		let form_vecchio = document.getElementsByName("modulo_token");
-		if(form_vecchio.length > 0){
-			form_vecchio.forEach(singolo_form => body.removeChild(singolo_form));
+		let modulo_vecchio = document.getElementsByName("modulo_token");
+		if(modulo_vecchio.length > 0){
+			modulo_vecchio.forEach(elemento => body.removeChild(elemento));
 		}
-		let form = document.createElement("form");
-		form.setAttribute("name","modulo_token");
-		form.setAttribute("method","POST");
+		let modulo = document.createElement("form");
+		modulo.setAttribute("name","modulo_token");
+		modulo.setAttribute("method","POST");
 		let token = document.createElement("input");
 		token.setAttribute("type","hidden");
 		token.setAttribute("name","token");
 		token.setAttribute("value",dati.token);
-		form.appendChild(token);
-		body.appendChild(form);
+		modulo.appendChild(token);
+		body.appendChild(modulo);
 	})
-	.finally(() => {
-		esegui_eliminazione_contatto(id_contatto);
-	})
+	.finally(() => esegui_eliminazione_contatto(id_contatto))
 	.catch(errore => console.error(errore));
 }
 
 function esegui_eliminazione_contatto(id_contatto){
 	let token = modulo_token.token.value;
 	let dati_inviati = new FormData();
-	dati_inviati.append("token",token);
 	dati_inviati.append("id_contatto",id_contatto);
+	dati_inviati.append("token",token);
 	fetch(percorso+"elimina_contatto.php",{
 		'method':'POST',
 		'header':{'Content-type':'application/json'},
@@ -416,10 +576,14 @@ function modifica_contatto(id_contatto){
 		let opzione4 = document.createElement("option");
 		opzione4.setAttribute("value","indirizzo");
 		opzione4.innerHTML = "Indirizzo del contatto";
+		let opzione5 = document.createElement("option");
+		opzione5.setAttribute("value","id_comune");
+		opzione5.innerHTML = "Comune di residenza del contatto";
 		dato.appendChild(opzione1);
 		dato.appendChild(opzione2);
 		dato.appendChild(opzione3);
 		dato.appendChild(opzione4);
+		dato.appendChild(opzione5);
 		contenitore_dato.appendChild(dato);
 		let spazio1 = document.createElement("br");
 		let valore = document.createElement("span");
@@ -448,24 +612,47 @@ function modifica_contatto(id_contatto){
 }
 
 function inserisci_valore(){
-	let contenitore_valore = document.getElementById("contenitore_valore");
-	let etichetta_vecchia = document.getElementsByName("etichetta_valore");
-	let valore_vecchio = document.getElementsByName("valore");
-	let spazio1_vecchio = document.getElementsByName("spazio1");
-	let spazio2_vecchio = document.getElementsByName("spazio2");
-	if(etichetta_vecchia.length > 0){
-		etichetta_vecchia.forEach(etichetta => contenitore_valore.removeChild(etichetta));
-	}
-	if(valore_vecchio.length > 0){
-		valore_vecchio.forEach(valore => contenitore_valore.removeChild(valore));
-	}
-	if(spazio1_vecchio.length > 0){
-		spazio1_vecchio.forEach(valore => contenitore_valore.removeChild(valore));
-	}
-	if(spazio2_vecchio.length > 0){
-		spazio2_vecchio.forEach(valore => contenitore_valore.removeChild(valore));
-	}
 	let dato = modulo.dato.value;
+	let contenitore_valore = document.getElementById("contenitore_valore");
+	if(dato == "id_comune"){
+		let etichetta_vecchia = document.getElementsByName("etichetta_valore");
+		let valore_vecchio = document.getElementsByName("valore");
+		let spazio1_vecchio = document.getElementsByName("spazio1");
+		let spazio2_vecchio = document.getElementsByName("spazio2");
+		if(etichetta_vecchia.length > 0){
+			etichetta_vecchia.forEach(etichetta => contenitore_valore.removeChild(etichetta));
+		}
+		if(valore_vecchio.length > 0){
+			valore_vecchio.forEach(valore => contenitore_valore.removeChild(valore));
+		}
+		if(spazio1_vecchio.length > 0){
+			spazio1_vecchio.forEach(spazio_1 => contenitore_valore.removeChild(spazio_1));
+		}
+		if(spazio2_vecchio.length > 0){
+			spazio2_vecchio.forEach(spazio_2 => contenitore_valore.removeChild(spazio_2));
+		}
+	}else{
+		let colonne_vecchio = document.getElementsByName("colonne");
+		let etichetta_vecchia = document.getElementsByName("etichetta_valore");
+		let valore_vecchio = document.getElementsByName("valore");
+		let spazio1_vecchio = document.getElementsByName("spazio1");
+		let spazio2_vecchio = document.getElementsByName("spazio2");
+		if(colonne_vecchio.length > 0){
+			colonne_vecchio.forEach(colonne => contenitore_valore.removeChild(colonne));
+		}
+		if(etichetta_vecchia.length > 0){
+			etichetta_vecchia.forEach(etichetta => contenitore_valore.removeChild(etichetta));
+		}
+		if(valore_vecchio.length > 0){
+			valore_vecchio.forEach(valore => contenitore_valore.removeChild(valore));
+		}
+		if(spazio1_vecchio.length > 0){
+			spazio1_vecchio.forEach(spazio_1 => contenitore_valore.removeChild(spazio_1));
+		}
+		if(spazio2_vecchio.length > 0){
+			spazio2_vecchio.forEach(spazio_2 => contenitore_valore.removeChild(spazio_2));
+		}
+	}
 	let spazio1 = document.createElement("br");
 	spazio1.setAttribute("name","spazio1");
 	let spazio2 = document.createElement("br");
@@ -519,6 +706,60 @@ function inserisci_valore(){
 			contenitore_valore.appendChild(valore3);
 			contenitore_valore.appendChild(spazio2);
 			break;
+		case "id_comune":
+			let etichetta4 = document.createElement("label");
+			etichetta4.setAttribute("name","etichetta_valore");
+			etichetta4.setAttribute("for","valore");
+			etichetta4.setAttribute("class","label");
+			etichetta4.innerHTML = "Selezionare il nuovo comune di residenza:";
+			let colonne = document.createElement("div");
+			colonne.setAttribute("class","columns");
+			colonne.setAttribute("name","colonne");
+			let colonna1 = document.createElement("div");
+			colonna1.setAttribute("class","column");
+			let contenitore_regioni = document.createElement("div");
+			contenitore_regioni.setAttribute("class","select is-primary is-rounded is-fullwidth");
+			let campo_regioni = document.createElement("select");
+			campo_regioni.setAttribute("name","id_regione");
+			campo_regioni.setAttribute("id","id_regione");
+			campo_regioni.setAttribute("onchange","javascript:seleziona_regione('valore')");
+			let opzione_vuota1 = document.createElement("option");
+			opzione_vuota1.setAttribute("value","");
+			campo_regioni.appendChild(opzione_vuota1);
+			regioni.forEach(regione => {
+				let opzione = document.createElement("option");
+				opzione.setAttribute("value",regione.id_regione);
+				opzione.innerHTML = regione.nome;
+				campo_regioni.appendChild(opzione);
+			});
+			contenitore_regioni.appendChild(campo_regioni);
+			colonna1.appendChild(contenitore_regioni);
+			colonne.appendChild(colonna1);
+			let colonna2 = document.createElement("div");
+			colonna2.setAttribute("class","column");
+			let contenitore_province = document.createElement("div");
+			contenitore_province.setAttribute("class","select is-primary is-rounded is-fullwidth");
+			let campo_province = document.createElement("select");
+			campo_province.setAttribute("name","id_provincia");
+			campo_province.setAttribute("id","id_provincia");
+			campo_province.setAttribute("onchange","javascript:seleziona_provincia('valore')");
+			contenitore_province.appendChild(campo_province);
+			colonna2.appendChild(contenitore_province);
+			colonne.appendChild(colonna2);
+			let colonna3 = document.createElement("div");
+			colonna3.setAttribute("class","column");
+			let contenitore_comuni = document.createElement("div");
+			contenitore_comuni.setAttribute("class","select is-primary is-rounded is-fullwidth");
+			let campo_comuni = document.createElement("select");
+			campo_comuni.setAttribute("name","valore");
+			campo_comuni.setAttribute("id","valore");
+			contenitore_comuni.appendChild(campo_comuni);
+			colonna3.appendChild(contenitore_comuni);
+			colonne.appendChild(colonna3);
+			contenitore_valore.appendChild(spazio1);
+			contenitore_valore.appendChild(etichetta4);
+			contenitore_valore.appendChild(colonne);
+			break;
 		default:
 			break;
 	}
@@ -539,10 +780,10 @@ function valida2(id_contatto){
 		}
 		if(controllo == 0){
 			let dati_inviati = new FormData();
-			dati_inviati.append("token",token);
 			dati_inviati.append("dato",dato);
 			dati_inviati.append("valore",valore);
 			dati_inviati.append("id_contatto",id_contatto);
+			dati_inviati.append("token",token);
 			fetch(percorso+"modifica_contatto.php",{
 				'method':'POST',
 				'header':{'Content-type':'application/json'},
@@ -657,9 +898,9 @@ function primo_inserimento(id_contatto){
 }
 
 function valida3(id_contatto){
-	let token = modulo.token.value;
 	let telefono = modulo.telefono.value;
 	let email = modulo.email.value;
+	let token = modulo.token.value;
 	let controllo = 0;
 	if(telefono == "" && email == ""){
 		controllo = 1;
@@ -667,10 +908,10 @@ function valida3(id_contatto){
 	}
 	if(controllo == 0){
 		let dati_inviati = new FormData();
-		dati_inviati.append("token",token);
 		dati_inviati.append("telefono",telefono);
 		dati_inviati.append("email",email);
 		dati_inviati.append("id_contatto",id_contatto);
+		dati_inviati.append("token",token);
 		fetch(percorso+"primo_inserimento.php",{
 			'method':'POST',
 			'header':{'Content-type':'application/json'},
@@ -702,32 +943,30 @@ function elimina(id_specifico,id_contatto,tipo){
 	.then(risposta => risposta.json())
 	.then(dati => {
 		let body = document.querySelector("body");
-		let form_vecchio = document.getElementsByName("modulo_token");
-		if(form_vecchio.length > 0){
-			form_vecchio.forEach(singolo_form => body.removeChild(singolo_form));
+		let modulo_vecchio = document.getElementsByName("modulo_token");
+		if(modulo_vecchio.length > 0){
+			modulo_vecchio.forEach(elemento => body.removeChild(elemento));
 		}
-		let form = document.createElement("form");
-		form.setAttribute("name","modulo_token");
-		form.setAttribute("method","POST");
+		let modulo = document.createElement("form");
+		modulo.setAttribute("name","modulo_token");
+		modulo.setAttribute("method","POST");
 		let token = document.createElement("input");
 		token.setAttribute("type","hidden");
 		token.setAttribute("name","token");
 		token.setAttribute("value",dati.token);
-		form.appendChild(token);
-		body.appendChild(form);
+		modulo.appendChild(token);
+		body.appendChild(modulo);
 	})
-	.finally(() => {
-		esegui_eliminazione(id_specifico,id_contatto,tipo);
-	})
+	.finally(() => esegui_eliminazione(id_specifico,id_contatto,tipo))
 	.catch(errore => console.error(errore));
 }
 
 function esegui_eliminazione(id_specifico,id_contatto,tipo){
 	let token = modulo_token.token.value;
 	let dati_inviati = new FormData();
-	dati_inviati.append("token",token);
 	(tipo == "telefono") ? dati_inviati.append("id_numero",id_specifico) : dati_inviati.append("id_indirizzo",id_specifico);
 	dati_inviati.append("id_contatto",id_contatto);
+	dati_inviati.append("token",token);
 	let pagina = (tipo == "telefono") ? "elimina_numero.php" : "elimina_email.php";
 	fetch(percorso+pagina,{
 		'method':'POST',
@@ -749,23 +988,21 @@ function modifica(id_specifico,id_contatto,tipo){
 	.then(risposta => risposta.json())
 	.then(dati => {
 		let body = document.querySelector("body");
-		let form_vecchio = document.getElementsByName("modulo_token");
-		if(form_vecchio.length > 0){
-			form_vecchio.forEach(singolo_form => body.removeChild(singolo_form));
+		let modulo_vecchio = document.getElementsByName("modulo_token");
+		if(modulo_vecchio.length > 0){
+			modulo_vecchio.forEach(elemento => body.removeChild(elemento));
 		}
-		let form = document.createElement("form");
-		form.setAttribute("name","modulo_token");
-		form.setAttribute("method","POST");
+		let modulo = document.createElement("form");
+		modulo.setAttribute("name","modulo_token");
+		modulo.setAttribute("method","POST");
 		let token = document.createElement("input");
 		token.setAttribute("type","hidden");
 		token.setAttribute("name","token");
 		token.setAttribute("value",dati.token);
-		form.appendChild(token);
-		body.appendChild(form);
+		modulo.appendChild(token);
+		body.appendChild(modulo);
 	})
-	.finally(() => {
-		esegui_modifica(id_specifico,id_contatto,tipo);
-	})
+	.finally(() => esegui_modifica(id_specifico,id_contatto,tipo))
 	.catch(errore => console.error(errore));
 }
 
@@ -781,10 +1018,10 @@ function esegui_modifica(id_specifico,id_contatto,tipo){
 	}
 	if(controllo == 0){
 		let dati_inviati = new FormData();
-		dati_inviati.append("token",token);
 		(tipo == "telefono") ? dati_inviati.append("telefono",valore) : dati_inviati.append("email",valore);
 		(tipo == "telefono") ? dati_inviati.append("id_numero",id_specifico) : dati_inviati.append("id_indirizzo",id_specifico);
 		dati_inviati.append("id_contatto",id_contatto);
+		dati_inviati.append("token",token);
 		let pagina = (tipo == "telefono") ? "modifica_numero.php" : "modifica_email.php";
 		fetch(percorso+pagina,{
 			'method':'POST',
@@ -807,23 +1044,21 @@ function aggiungi(id_contatto,tipo){
 	.then(risposta => risposta.json())
 	.then(dati => {
 		let body = document.querySelector("body");
-		let form_vecchio = document.getElementsByName("modulo_token");
-		if(form_vecchio.length > 0){
-			form_vecchio.forEach(singolo_form => body.removeChild(singolo_form));
+		let modulo_vecchio = document.getElementsByName("modulo_token");
+		if(modulo_vecchio.length > 0){
+			modulo_vecchio.forEach(elemento => body.removeChild(elemento));
 		}
-		let form = document.createElement("form");
-		form.setAttribute("name","modulo_token");
-		form.setAttribute("method","POST");
+		let modulo = document.createElement("form");
+		modulo.setAttribute("name","modulo_token");
+		modulo.setAttribute("method","POST");
 		let token = document.createElement("input");
 		token.setAttribute("type","hidden");
 		token.setAttribute("name","token");
 		token.setAttribute("value",dati.token);
-		form.appendChild(token);
-		body.appendChild(form);
+		modulo.appendChild(token);
+		body.appendChild(modulo);
 	})
-	.finally(() => {
-		esegui_giunzione(id_contatto,tipo);
-	})
+	.finally(() => esegui_giunzione(id_contatto,tipo))
 	.catch(errore => console.error(errore));
 }
 
@@ -839,9 +1074,9 @@ function esegui_giunzione(id_contatto,tipo){
 	}
 	if(controllo == 0){
 		let dati_inviati = new FormData();
-		dati_inviati.append("token",token);
 		(tipo == "telefono") ? dati_inviati.append("telefono",valore) : dati_inviati.append("email",valore);
 		dati_inviati.append("id_contatto",id_contatto);
+		dati_inviati.append("token",token);
 		let pagina = (tipo == "telefono") ? "aggiungi_numero.php" : "aggiungi_email.php";
 		fetch(percorso+pagina,{
 			'method':'POST',

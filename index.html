@@ -27,7 +27,7 @@ switch(tema){
 }
 </script>
 </head>
-<body onload="stampa_rubrica();">
+<body onload="caricamento_applicazione()">
 <section class="section">
 	<div id="container">
 		<a href="javascript:cambia_tema()">Cambia il tema grafico</a><br><br>
@@ -37,5 +37,13 @@ switch(tema){
 		<span id="stampa_rubrica"></span>
 	</div>
 </section>
+<div class="modal" id="finestra_caricamento">
+	<div class="modal-background"></div>
+	<div class="modal-content">
+		<div class="box">
+			<h1 class="title">Caricamento applicazione in corso...</h1>
+		</div>
+	</div>
+</div>
 </body>
 </html>

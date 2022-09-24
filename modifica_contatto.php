@@ -34,7 +34,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 			//controllo effettuato solo sul server
 			$dettaglio_contatto = estrai("contatti",["id_contatto"],[$id_contatto]);
 			if($dato == "nome"){
-				$numero_utenti = estrai("contatti",["nome","cognome","indirizzo"],[$valore,$dettaglio_contatto[0]['cognome'],$dettaglio_contatto[0]['indirizzo']]);
+				$numero_utenti = estrai("contatti",["nome","cognome","indirizzo","id_comune"],[$valore,$dettaglio_contatto[0]['cognome'],$dettaglio_contatto[0]['indirizzo'],$dettaglio_contatto[0]['id_comune']]);
 				if(count($numero_utenti) > 0){
 					$controllo = 1;
 					$messaggio .= "Dopo la modifica il contatto risulter&agrave; uguale ad uno gi&agrave; presente in rubrica.<br>";
@@ -43,7 +43,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 
 			//controllo effettuato solo sul server
 			if($dato == "cognome"){
-				$numero_utenti = estrai("contatti",["nome","cognome","indirizzo"],[$dettaglio_contatto[0]['nome'],$valore,$dettaglio_contatto[0]['indirizzo']]);
+				$numero_utenti = estrai("contatti",["nome","cognome","indirizzo","id_comune"],[$dettaglio_contatto[0]['nome'],$valore,$dettaglio_contatto[0]['indirizzo'],$dettaglio_contatto[0]['id_comune']]);
 				if(count($numero_utenti) > 0){
 					$controllo = 1;
 					$messaggio .= "Dopo la modifica il contatto risulter&agrave; uguale ad uno gi&agrave; presente in rubrica.<br>";
@@ -52,7 +52,16 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 
 			//controllo effettuato solo sul server
 			if($dato == "indirizzo"){
-				$numero_utenti = estrai("contatti",["nome","cognome","indirizzo"],[$dettaglio_contatto[0]['nome'],$dettaglio_contatto[0]['cognome'],$valore]);
+				$numero_utenti = estrai("contatti",["nome","cognome","indirizzo","id_comune"],[$dettaglio_contatto[0]['nome'],$dettaglio_contatto[0]['cognome'],$valore,$dettaglio_contatto[0]['id_comune']]);
+				if(count($numero_utenti) > 0){
+					$controllo = 1;
+					$messaggio .= "Dopo la modifica il contatto risulter&agrave; uguale ad uno gi&agrave; presente in rubrica.<br>";
+				}
+			}
+
+			//controllo effettuato solo sul server
+			if($dato == "id_comune"){
+				$numero_utenti = estrai("contatti",["nome","cognome","indirizzo","id_comune"],[$dettaglio_contatto[0]['nome'],$dettaglio_contatto[0]['cognome'],$dettaglio_contatto[0]['indirizzo'],$valore]);
 				if(count($numero_utenti) > 0){
 					$controllo = 1;
 					$messaggio .= "Dopo la modifica il contatto risulter&agrave; uguale ad uno gi&agrave; presente in rubrica.<br>";
@@ -65,11 +74,15 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 				$controllo = 1;
 				$messaggio .= "Impossibile modificare ";
 				if($dato == "nome" || $dato == "cognome"){
-					$messaggio .= "il ";
+					$messaggio .= "il ".$dato;
 				}else{
-					$messaggio .= "l'";
+					if($dato == "indirizzo"){
+						$messaggio .= "l'".$dato;
+					}else{
+						$messaggio .= "il comune di residenza";
+					}
 				}
-				$messaggio .= $dato . ", dopo la modifica il suo valore non cambierebbe.<br>";
+				$messaggio .= ", dopo la modifica il suo valore non cambierebbe.<br>";
 			}
 		}
 
