@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="Antonio Tassone">
+<meta name="description" content="Applicazione web semplice che serve a gestire una piccola rubrica domestica.">
+<meta name="keywords" content="applicazione,web,javascript,php,rubrica,contatti,contatto">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>
+Rubrica personale
+</title>
+<script src="gestione_cookie.js"></script>
+<script src="codice.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css" type="text/css">
+<script>
+let tema = vedi_tema_impostato();
+switch(tema){
+	case "tema1":
+		document.write('<link rel="stylesheet" href="stile1.css" type="text/css">');
+		break;
+	case "tema2":
+		document.write('<link rel="stylesheet" href="stile2.css" type="text/css">');
+		break;
+	default:
+		document.write('<link rel="stylesheet" href="stile1.css" type="text/css">');
+		break;
+}
+</script>
+</head>
+<body onload="stampa_rubrica()">
+<section class="section">
+<div id="container">
+<a href="javascript:cambia_tema()">Cambia il tema grafico</a><br><br>
+<h1 class="title">Rubrica personale</h1>
+<span id="messaggio"></span><br><br>
+<a href="javascript:aggiungi_contatto()">Aggiungi un nuovo contatto</a><br><br>
+<span id="stampa_rubrica"></span>
+</div>
+</section>
+</body>
+</html>
